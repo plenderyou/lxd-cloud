@@ -1,0 +1,23 @@
+---
+- hosts: all
+  user: ubuntu
+  sudo: yes
+  tasks:
+  # For some unknown reason ansible requires aptitude
+    - command: apt-get install aptitude -y
+ #   - apt: update_cache=yes upgrade=yes
+    - apt: name=bridge-utils state=present
+    - apt: name=zfsutils-linux state=present
+    - apt: name=lxd state=present
+    - copy: src=files/peervpn dest=/usr/local/sbin/peervpn mode=755
+    - file: path=/etc/peervpn state=directory
+    - template: src=templates/lxd-bridge.j2 dest=/etc/default/lxd-bridge
+    - template: src=templates/peervpn.conf.j2 dest=/etc/peervpn/peervpn.conf.l2
+    - template: src=templates/peervpn.service.j2 dest=/lib/systemd/system/peervpn.service
+    - service: name=lxd-bridge state=restarted
+    - service: name=peervpn enabled=true state=restarted
+
+
+
+
+

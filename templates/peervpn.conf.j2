@@ -1,0 +1,13 @@
+{% macro initpeers() %}
+initpeers {% for i in range(1,4) %}{% if i != ID | int %}{{ LOCAL_IP }} 700{{ i }} {% endif %}{% endfor %}
+{% endmacro %}
+
+networkname PEERVPN
+psk password
+enabletunneling yes
+interface peervpn0
+ifconfig4 10.99.2.{{ ID }}/24
+port 7000
+{{ initpeers() }}
+upcmd brctl addif lxdbr0 peervpn0
+

@@ -1,0 +1,46 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+#require 'vagrant-ansible'
+#require ENV
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  config.ssh.forward_agent = true
+  config.vm.provider "virtualbox" do |v|
+    v.gui = false
+  end
+
+  (1..3).each do |i|
+    config.vm.define "lxd#{i}" do |lxd|
+        lxd.vm.box = "ubuntu/xenial64"
+        lxd.vm.network "forwarded_port", guest: 7000, host: "700#{i}", protocol: "udp"
+        lxd.vm.provider :virtualbox do |v|
+            v.name = "xenial-64-lxd#{i}"
+            v.customize ["modifyvm", :id, "--memory", "2048"]
+            v.customize ["modifyvm", :id, "--ioapic", "on"]
+            v.customize ["modifyvm", :id, "--cpus", "2"]  
+            v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"] 
+        end
+
+        lxd.vm.provision :shell, inline: "hostnamectl set-hostname lxd#{i}"
+        lxd.vm.provision :shell, inline: "sudo apt-get install python-simplejson -y"
+
+        lxd.vm.provision "ansible" do |ansible|
+            ansible.playbook = "base-setup.yml"
+            ansible.sudo = true
+            ansible.extra_vars = { "ID" => "#{i}", "LOCAL_IP" => ENV['HOSTNAME'] }
+
+            ansible.verbose = true
+        end
+    end
+  end
+
+ 
+end
+
+ 
+ 
